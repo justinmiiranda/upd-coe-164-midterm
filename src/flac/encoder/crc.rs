@@ -16,16 +16,34 @@ pub struct CrcOptions <T> {
 impl <T> CrcOptions <T> {
     /// Create a builder to the CRC encoder
     pub fn new(poly: T, poly_len: T) -> Self {
-        todo!()
+        Self {
+            poly,
+            poly_len
+        }
     }
 }
 
+// http://www.sunshine2k.de/articles/coding/crc/understanding_crc.html#ch41
 impl CrcOptions <u8> {
     /// Encode data using CRC8 encoding
     /// 
     /// This method is available only if `CrcOptions` is of type `u8`.
-    pub fn build_crc8(&self, data: &Vec <u8>) -> u8 {
-        todo!()
+    pub fn build_crc8(&self, data: &[u8]) -> u8 {
+        let mut crc: u8 = 0;
+
+        for &curr_byte in data {
+            crc ^= curr_byte;
+
+            for _ in 0..8 {
+                if (crc & 0x80) != 0 {
+                    crc = (crc << 1) ^ self.poly;
+                } else {
+                    crc <<= 1;
+                }
+            }
+        }
+
+        crc & ((1 << (self.poly_len as usize)) - 1) as u8 // Mask CRC to poly_len bits
     }
 }
 

@@ -79,7 +79,10 @@ impl WaveReader {
     /// Returns a `WaveReaderError` with the appropriate error if something
     /// happens.
     pub fn open_pcm(file_path: &str) -> Result <PCMWaveInfo, WaveReaderError> {
-        todo!();
+        //todo!();
+        let wav_file = File::open(file_path)?;
+
+        Result
     }
 
     /// Read the RIFF header from a PCM WAV file
@@ -92,7 +95,87 @@ impl WaveReader {
     /// Returns a `WaveReaderError` with the appropriate error if something
     /// happens. This includes file read errors and format errors.
     fn read_riff_chunk(fh: &mut File) -> Result <RiffChunk, WaveReaderError> {
-        todo!();
+        //todo!();
+        let wav_file = match File::open(file_path){
+            Ok(file) => wav_file;
+            Err(err) => {
+                return Err(WaveReaderError::ReadError);
+            }
+        }
+        
+        //// CHECKING IF RIFF BA SIYA OR HINDI
+
+        // EXTRACT RIFF HEADER
+        let mut buff = [0u8; 4]; // BUFFER NG RIFF HEADER
+        let first = wav_file.read(&mut buff[...])?;
+        let mut combined = 0u32; // variable that assembles the riff chunk
+        for i in 0..4{
+            combined += buff[3-i];
+            if i == 3{
+                break
+            }
+            combined <<= 8;
+        }
+        // END OF EXTRACTING RIFF HEADER
+        
+        // ACTUAL CHECKING IF RIFF BA SIYA OR NOT
+        if combined == 0x52494646{
+            
+            // EXTRACT WAVE HEADER
+            let mut third_buff = [0u8, 4]; // buffer ng WAVE header
+            wav_file.seek(SeekFrom::Start(8))?;
+            let wave_check = wav_file.read(&mut buff[...])?;
+            let mut wave_form = 0u32; // variable that assembles the wave header chunk
+            for k in 0..4{
+                wave_form += third_buff[3-k];
+                if k == 3{
+                    break
+                }
+                wave_form <<= 8;
+            }
+            // END OF EXTRACTING WAVE HEADER
+
+            // CHECK IF CORRECT WAVE HEADER
+            if wave_check ==  0x57415645{
+                // IF CORRECT WAVE HEADER, PROCEED TO EXTRACT FILE SIZE
+                
+                //EXTRACT FILE SIZE
+                let mut second_buff = [0u8; 4]; // buffer of file size
+                wav_file.seek(SeekFrom::Start(4))?;
+                let mut wav_file_size = wav_file.read(&mut second_buff[...]);  
+                let mut wav_size_to_return = 0u32;
+                for j in 0..4{
+                    wav_size_to_return += second_buff[3-j];
+                    if j == 3{
+                        break
+                    }
+                    wav_size_to_return <<= 8;
+                }
+                //END OF EXTRACTING FILE SIZE
+        
+                //PACKAGE THE FILE SIZE AS RESULT
+                let riff_chunk = RiffChunk{
+                    file_size: wav_size_to_return,
+                    is_big_endian: false,
+                }
+
+                //RETURN FILE SIZE
+                return Ok(riff_chunk);
+                }
+            
+            // IF EXTRACTED WAVE HEADER IS NOT EQUAL TO THE GIVEN, RETURN ERROR
+            else{
+                return Err(WaveReaderError::NotWaveError);
+            }
+        }
+        // KAPAG RIFF, HINDI NA MAG-RU-RUN YUNG ELSE SA BABA
+
+        // ELSE ITONG BABA, KUNG HINDI RIFF YUNG FILE
+        else if combined == 
+        
+        else{
+            return Err(WaveReaderError::NotRiffError);
+        }
     }
 
     /// Read the format chunk from a PCM WAV file
@@ -104,7 +187,58 @@ impl WaveReader {
     /// Returns a `WaveReaderError` with the appropriate error if something
     /// happens. This includes file read errors and format errors.
     fn read_fmt_chunk(fh: &mut File) -> Result <PCMWaveFormatChunk, WaveReaderError> {
-        todo!();
+        //todo!();
+        let wav_file = match File::open(file_path){
+            Ok(file) => wav_file;
+            Err(err) => {
+                return Err(WaveReaderError::ReadError);
+            }
+        }
+        // LIST OF COMPONENTS UNDER THE FORMAT CHUNK
+        let mut fmt_combined = 0u32; // variable that assembles the fmt header
+
+
+
+        // EXTRACT FMT HEADER
+        wav_file.seek(SeekFrom::Start(12));
+        let mut fourth_buff = [0u8; 4]; // BUFFER NG FMT HEADER
+        let fmt_header = wav_file.read(&mut buff[...])?;
+
+        for i in 0..4{
+            fmt_combined += buff[3-i];
+            if i == 3{
+                break
+            }
+            fmt_combined <<= 8;
+        }
+        // END OF EXTRACTING RIFF HEADER
+        
+        // ACTUAL CHECKING IF RIFF BA SIYA OR NOT
+        if combined == 0x52494646{
+            
+            // EXTRACT WAVE HEADER
+            let mut third_buff = [0u8, 4];
+            wav_file.seek(SeekFrom::Start(8))?;
+            let wave_check = wav_file.read(&mut buff[...])?;
+            let mut wave_form = 0u32; // variable that assembles the riff chunk
+            for k in 0..4{
+                wave_form += third_buff[3-k];
+                if k == 3{
+                    break
+                }
+                wave_form <<= 8;
+            }
+            // END OF EXTRACTING WAVE HEADER
+        }
+        
+        // KAPAG RIFF, HINDI NA MAG-RU-RUN YUNG ELSE SA BABA
+
+        // ELSE ITONG BABA, KUNG HINDI RIFF YUNG FILE
+        else{
+            return Err(WaveReaderError::NotRiffError);
+        }
+    }
+
     }
 
     /// Read the data chunk from a PCM WAV file

@@ -28,7 +28,7 @@ impl CrcOptions <u8> {
     /// Encode data using CRC8 encoding
     /// 
     /// This method is available only if `CrcOptions` is of type `u8`.
-    pub fn build_crc8(&self, data: &[u8]) -> u8 {
+    pub fn build_crc8(&self, data: &Vec <u8>) -> u8 {
         let mut crc: u8 = 0;
 
         for &curr_byte in data {

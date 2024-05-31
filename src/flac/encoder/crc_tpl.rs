@@ -16,7 +16,10 @@ pub struct CrcOptions <T> {
 impl <T> CrcOptions <T> {
     /// Create a builder to the CRC encoder
     pub fn new(poly: T, poly_len: T) -> Self {
-        todo!()
+        Self {
+            poly,
+            poly_len
+        }
     }
 }
 

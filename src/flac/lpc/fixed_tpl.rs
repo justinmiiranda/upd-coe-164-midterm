@@ -4,30 +4,31 @@ impl FixedPredictor {
     /// Get order that yields the least sum of residuals
     /// 
     /// The predictor orders are from 0 to 4 inclusive and is retrieved
-    /// by finding the predictor that yields the *minimum* sum of residuals
-    /// for the given `data` and derived predictor.
-    pub fn best_predictor_order(data: Vec <i32>) -> Option <u32> {
-        let mut res_0 = FixedPredictor::get_residuals(data, 0);
-        let mut res_1 = FixedPredictor::get_residuals(data, 1);
-        let mut res_2 = FixedPredictor::get_residuals(data, 2);
-        let mut res_3 = FixedPredictor::get_residuals(data, 3);
-        let mut res_4 = FixedPredictor::get_residuals(data, 4);
-
+    /// by finding the predictor that yields the *minimum* absolute
+    /// sum of residuals for the given `data` and derived predictor.
+    pub fn best_predictor_order(data: &Vec<i64>) -> Option<u8> {
+        let res_0 = FixedPredictor::get_residuals(data, 0);
+        let res_1 = FixedPredictor::get_residuals(data, 1);
+        let res_2 = FixedPredictor::get_residuals(data, 2);
+        let res_3 = FixedPredictor::get_residuals(data, 3);
+        let res_4 = FixedPredictor::get_residuals(data, 4);
+    
         let sum_0 = FixedPredictor::calculate_sum(res_0);
         let sum_1 = FixedPredictor::calculate_sum(res_1);
         let sum_2 = FixedPredictor::calculate_sum(res_2);
         let sum_3 = FixedPredictor::calculate_sum(res_3);
         let sum_4 = FixedPredictor::calculate_sum(res_4);
-        
+    
         let min_predictor_order = vec![sum_0, sum_1, sum_2, sum_3, sum_4]
             .into_iter()
             .enumerate()
             .filter_map(|(index, sum)| sum.map(|value| (index, value)))
             .min_by_key(|&(_, sum)| sum)
-            .map(|(index, _)| index);
-
-        Some(min_predictor_order)
+            .map(|(index, _)| index as u8);  // Convert usize to u8 here
+    
+        min_predictor_order
     }
+    
 
     /// Get residuals of a fixed predictor order 
     /// 
@@ -47,7 +48,7 @@ impl FixedPredictor {
     /// `None` is returned if an error occurs in the function. This includes whether
     /// the predictor order provided is not within 0 and 4 inclusive and whether the
     /// size of `data` is less than the predictor order.
-    pub fn get_residuals(data: Vec<i32>, predictor_order: u32) -> Option<Vec<i32>> {
+    pub fn get_residuals(data: &Vec <i64>, predictor_order: u8) -> Option <Vec <i64>> {
         let data_len = data.len();
 
         if data_len == 0 || predictor_order > 4 {
@@ -94,17 +95,44 @@ impl FixedPredictor {
             }
         }
     
-        Some(residual)
+        let index: usize = predictor_order.into();
+        Some(residual[index..].to_vec())
     }
 
-    fn calculate_sum(vector: Option<Vec<i32>>) -> Option<i32> {
+    fn calculate_sum(vector: Option<Vec<i64>>) -> Option<i64> {
         match vector {
             Some(vec) => {
-                let sum: i32 = vec.iter().sum();
+                let sum: i64 = vec.iter().sum();
                 Some(sum)
             }
             None => None,
         }
     }
-    
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sample_ietf_02a() {
+        let in_vec = vec![
+            4302, 7496, 6199, 7427,
+            6484, 7436, 6740, 7508,
+            6984, 7583, 7182, -5990,
+            -6306, -6032, -6299, -6165,
+        ];
+
+        let out_vec_ans = vec![
+            3194, -1297, 1228,
+            -943, 952, -696, 768,
+            -524, 599, -401, -13172,
+            -316, 274, -267, 134,
+        ];
+
+        let ans = FixedPredictor::get_residuals(&in_vec, 1);
+
+        assert!(ans.is_some());
+        assert_eq!(ans.unwrap(), out_vec_ans);
+    }
 }

@@ -6,9 +6,8 @@ impl Utf8Encoder {
     /// Although UTF-8 encoding is for characters, characters are
     /// mapped to certain numbers.
     pub fn encode(num: u64) -> Vec<u8> {
-        let min_num_bits = Self::ceiling_log(num);
-        let num_bin_string = String::from(format!("{min_num_bits:b}"));
-
+        let min_num_bits = Self::min_bits_to_represent(num);
+        let num_bin_string = String::from(format!("{num:b}"));
         let template = Self::template_generator(min_num_bits);
         let unicode_binary = Self::replace_x(template, num_bin_string);
         
@@ -17,18 +16,18 @@ impl Utf8Encoder {
 
     // Helper Functions
     fn template_generator(min: u64) -> String {
-        if min > 0 && min <= 7 {
+        if min >= 0 && min <= 7 {
             "0xxxxxx".to_string()
         } else if min >= 8 && min <= 11 {
             "110xxxxx10xxxxxx".to_string()
         } else if min >= 12 && min <= 16 {
             "1110xxxx10xxxxxx10xxxxxx".to_string()
         } else if min >= 17 && min <= 21 {
-            "11110xxx10xxxxxx10xxxxxx10xxxxxx".to_string()
+            "11110xxx10xxxxxx10xxxxxx10xx xxxx".to_string()
         } else if min >= 22 && min <= 26 {
             "111110xx10xxxxxx10xxxxxx10xxxxxx10xxxxxx".to_string()
         } else if min >= 27 && min <= 31 {
-            "1111110x10xxxxxx10xxxxxx10xxxxxx10xxxxxx10xxxxxx".to_string()
+            "111110xx10xxxxxx10xxxxxx10xxxxxx10xxxxxx".to_string()
         } else if min >= 32 && min <= 40 {
             "1111111010xxxxxx10xxxxxx10xxxxxx10xxxxxx10xxxxxx10xxxxxx".to_string()
         } else {
@@ -36,8 +35,12 @@ impl Utf8Encoder {
         }
     }
 
-    fn ceiling_log(num: u64) -> u64 {
-        return (num as f64).log2().ceil() as u64;
+    fn min_bits_to_represent(n: u64) -> u64 {
+        if n == 0 {
+            1 // at least 1 bit is needed to represent the number 0
+        } else {
+            64 - n.leading_zeros() as u64
+        }
     }
 
     fn replace_x(template_string: String, binary_string: String) -> String {
@@ -70,7 +73,7 @@ impl Utf8Encoder {
                 current_byte = (current_byte << 1) | bit;
                 bits_in_current_byte += 1;
     
-                if bits_in_current_byte == 4 {
+                if bits_in_current_byte == 8 {
                     result.push(current_byte as u8);
                     current_byte = 0;
                     bits_in_current_byte = 0;
@@ -93,9 +96,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode() {
-        let input = 2766;
-        let expected_output = vec![14, 0, 10, 11, 8, 14];
-        assert_eq!(Utf8Encoder::encode(input), expected_output);
+    fn sample_01() {
+        let in_val = 0;
+        let out_val_ans = vec![0u8];
+        let out_val = Utf8Encoder::encode(in_val);
+
+        assert_eq!(out_val_ans, out_val);
+    }
+
+    #[test]
+    fn sample_02() {
+        let in_val = 0x164;
+        let out_val_ans = vec![0xc5u8, 0xa4u8];
+        let out_val = Utf8Encoder::encode(in_val);
+
+        assert_eq!(out_val_ans, out_val);
     }
 }

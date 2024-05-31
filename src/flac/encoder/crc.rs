@@ -23,6 +23,8 @@ impl <T> CrcOptions <T> {
     }
 }
 
+// http://www.sunshine2k.de/articles/coding/crc/understanding_crc.html#ch41
+// Reference implementation
 impl CrcOptions <u8> {
     /// Encode data using CRC8 encoding
     /// 
@@ -51,21 +53,21 @@ impl CrcOptions <u16> {
     /// 
     /// This method is available only if `CrcOptions` is of type `u16`.
     pub fn build_crc16(&self, data: &Vec <u16>) -> u16 {
-        let mut crc: u16 = 0;
-
-        for &curr_byte in data {
-            crc ^= curr_byte;
-
-            for _ in 0..self.poly_len {
-                if (crc & 0x80) != 0 {
+        let mut crc = 0u16;
+    
+        for &b in data {
+            crc ^= u16::from(b) << (self.poly_len - 8);
+    
+            for _ in 0..8 {
+                if crc & (1 << (self.poly_len - 1)) != 0 {
                     crc = (crc << 1) ^ self.poly;
                 } else {
                     crc <<= 1;
                 }
             }
         }
-
-        crc & ((1 << (self.poly_len as usize)) - 1) as u16 // Mask CRC to poly_len bits
+    
+        crc
     }
 }
 
